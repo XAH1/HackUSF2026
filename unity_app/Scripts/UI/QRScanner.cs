@@ -1,5 +1,6 @@
 using UnityEngine;
 using ZXing;
+using ZXing.Common;
 
 namespace ARNav
 {
@@ -11,8 +12,6 @@ namespace ARNav
         private bool isScanning = true;
         private float scanInterval = 0.5f;
         private float timer = 0f;
-
-        private IBarcodeReader reader = new BarcodeReader();
 
         void Start()
         {
@@ -34,12 +33,23 @@ namespace ARNav
             if (!camTexture.didUpdateThisFrame) return;
             try
             {
-                // BarcodeReader принимает Color32[] напрямую
-                var result = reader.Decode(
-                    camTexture.GetPixels32(),
-                    camTexture.width,
-                    camTexture.height
-                );
+                Color32[] pixels = camTexture.GetPixels32();
+                int width = camTexture.width;
+                int height = camTexture.height;
+
+                // конвертируем Color32[] → byte[] вручную (RGB)
+                byte[] bytes = new byte[pixels.Length * 3];
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    bytes[i * 3] = pixels[i].r;
+                    bytes[i * 3 + 1] = pixels[i].g;
+                    bytes[i * 3 + 2] = pixels[i].b;
+                }
+
+                var source = new RGBLuminanceSource(bytes, width, height);
+                var bitmap = new BinaryBitmap(new HybridBinarizer(source));
+                var reader = new MultiFormatReader();
+                var result = reader.decode(bitmap);
 
                 if (result != null)
                 {
@@ -47,6 +57,7 @@ namespace ARNav
                     OnQRScanned(result.Text);
                 }
             }
+            catch (ReaderException) { /* QR не найден в кадре — норм */ }
             catch (System.Exception e)
             {
                 Debug.LogWarning("Scan error: " + e.Message);
