@@ -1,91 +1,94 @@
-using UnityEngine;
-using ZXing;
-using System;
-
-public class QRScanner : MonoBehaviour
+namespace ARNav
 {
-    // === НАСТРОЙКИ ===
-    public NavigationManager navManager;
-    public UIController uiController;
+    using UnityEngine;
+    using ZXing;
+    using System;
 
-    private WebCamTexture camTexture;  // поток с камеры Quest
-    private BarcodeReader reader;      // ZXing — библиотека для чтения QR
-    private bool isScanning = true;    // сканируем или нет
-    private float scanInterval = 0.5f; // проверяем каждые 0.5 сек
-    private float timer = 0f;
-
-    void Start()
+    public class QRScanner : MonoBehaviour
     {
-        // запускаем камеру
-        camTexture = new WebCamTexture();
-        camTexture.Play();
+        // === НАСТРОЙКИ ===
+        public NavigationManager navManager;
+        public UIController uiController;
 
-        // создаём читалку QR кодов
-        reader = new BarcodeReader();
+        private WebCamTexture camTexture;  // поток с камеры Quest
+        private BarcodeReader reader;      // ZXing — библиотека для чтения QR
+        private bool isScanning = true;    // сканируем или нет
+        private float scanInterval = 0.5f; // проверяем каждые 0.5 сек
+        private float timer = 0f;
 
-        Debug.Log("QR Scanner started");
-    }
-
-    void Update()
-    {
-        if (!isScanning) return;
-
-        // проверяем не каждый кадр а раз в 0.5 сек — экономим CPU
-        timer += Time.deltaTime;
-        if (timer < scanInterval) return;
-        timer = 0f;
-
-        ScanFrame();
-    }
-
-    void ScanFrame()
-    {
-        try
+        void Start()
         {
-            // берём текущий кадр с камеры
-            Color32[] pixels = camTexture.GetPixels32();
-            int width = camTexture.width;
-            int height = camTexture.height;
+            // запускаем камеру
+            camTexture = new WebCamTexture();
+            camTexture.Play();
 
-            // пробуем найти QR код в кадре
-            var result = reader.Decode(pixels, width, height);
+            // создаём читалку QR кодов
+            reader = new BarcodeReader();
 
-            if (result != null)
+            Debug.Log("QR Scanner started");
+        }
+
+        void Update()
+        {
+            if (!isScanning) return;
+
+            // проверяем не каждый кадр а раз в 0.5 сек — экономим CPU
+            timer += Time.deltaTime;
+            if (timer < scanInterval) return;
+            timer = 0f;
+
+            ScanFrame();
+        }
+
+        void ScanFrame()
+        {
+            try
             {
-                string nodeId = result.Text; // например "entrance"
-                Debug.Log("QR scanned: " + nodeId);
-                OnQRScanned(nodeId);
+                // берём текущий кадр с камеры
+                Color32[] pixels = camTexture.GetPixels32();
+                int width = camTexture.width;
+                int height = camTexture.height;
+
+                // пробуем найти QR код в кадре
+                var result = reader.Decode(pixels, width, height);
+
+                if (result != null)
+                {
+                    string nodeId = result.Text; // например "entrance"
+                    Debug.Log("QR scanned: " + nodeId);
+                    OnQRScanned(nodeId);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Scan error: " + e.Message);
             }
         }
-        catch (Exception e)
+
+        void OnQRScanned(string nodeId)
         {
-            Debug.LogWarning("Scan error: " + e.Message);
+            // останавливаем сканирование — уже знаем где мы
+            isScanning = false;
+
+            // говорим UI показать меню выбора назначения
+            uiController.ShowDestinationMenu(nodeId);
+
+            Debug.Log("Current position: " + nodeId);
         }
-    }
 
-    void OnQRScanned(string nodeId)
-    {
-        // останавливаем сканирование — уже знаем где мы
-        isScanning = false;
+        // вызывается когда пользователь хочет пересканировать
+        public void RestartScanning()
+        {
+            isScanning = true;
+            timer = 0f;
+            Debug.Log("Scanning restarted");
+        }
 
-        // говорим UI показать меню выбора назначения
-        uiController.ShowDestinationMenu(nodeId);
-
-        Debug.Log("Current position: " + nodeId);
-    }
-
-    // вызывается когда пользователь хочет пересканировать
-    public void RestartScanning()
-    {
-        isScanning = true;
-        timer = 0f;
-        Debug.Log("Scanning restarted");
-    }
-
-    void OnDestroy()
-    {
-        // выключаем камеру когда выходим
-        if (camTexture != null)
-            camTexture.Stop();
+        void OnDestroy()
+        {
+            // выключаем камеру когда выходим
+            if (camTexture != null)
+                camTexture.Stop();
+        }
     }
 }
