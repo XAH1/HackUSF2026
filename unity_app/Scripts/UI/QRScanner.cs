@@ -1,6 +1,5 @@
 using UnityEngine;
 using ZXing;
-using ZXing.Common;
 
 namespace ARNav
 {
@@ -9,7 +8,6 @@ namespace ARNav
         public UIController uiController;
 
         private WebCamTexture camTexture;
-        private BarcodeReader<RGBLuminanceSource> reader;
         private bool isScanning = true;
         private float scanInterval = 0.5f;
         private float timer = 0f;
@@ -18,8 +16,6 @@ namespace ARNav
         {
             camTexture = new WebCamTexture();
             camTexture.Play();
-            reader = new BarcodeReader<RGBLuminanceSource>();
-            Debug.Log("QR Scanner started");
         }
 
         void Update()
@@ -36,6 +32,7 @@ namespace ARNav
             if (!camTexture.didUpdateThisFrame) return;
             try
             {
+                var reader = new BarcodeReader();
                 var result = reader.Decode(
                     camTexture.GetPixels32(),
                     camTexture.width,
