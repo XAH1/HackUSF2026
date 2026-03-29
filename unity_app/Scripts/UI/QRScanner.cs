@@ -6,11 +6,10 @@ namespace ARNav
 {
     public class QRScanner : MonoBehaviour
     {
-        public NavigationManager navManager;
         public UIController uiController;
 
         private WebCamTexture camTexture;
-        private IBarcodeReader reader;
+        private BarcodeReader reader;
         private bool isScanning = true;
         private float scanInterval = 0.5f;
         private float timer = 0f;
@@ -35,18 +34,13 @@ namespace ARNav
         void ScanFrame()
         {
             if (!camTexture.didUpdateThisFrame) return;
-
             try
             {
-                Color32[] pixels = camTexture.GetPixels32();
-                int width = camTexture.width;
-                int height = camTexture.height;
-
-                // конвертируем Color32[] в LuminanceSource
-                var source = new Color32LuminanceSource(pixels, width, height);
-                var binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
-                var result = new MultiFormatReader().decode(binaryBitmap);
-
+                var result = reader.Decode(
+                    camTexture.GetPixels32(),
+                    camTexture.width,
+                    camTexture.height
+                );
                 if (result != null)
                 {
                     Debug.Log("QR scanned: " + result.Text);
@@ -73,8 +67,7 @@ namespace ARNav
 
         void OnDestroy()
         {
-            if (camTexture != null)
-                camTexture.Stop();
+            if (camTexture != null) camTexture.Stop();
         }
     }
 }
