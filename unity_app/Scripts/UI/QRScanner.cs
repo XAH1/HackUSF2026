@@ -1,5 +1,6 @@
 using UnityEngine;
 using ZXing;
+using ZXing.QrCode;
 
 namespace ARNav
 {
@@ -32,12 +33,12 @@ namespace ARNav
             if (!camTexture.didUpdateThisFrame) return;
             try
             {
-                var reader = new BarcodeReader();
-                var result = reader.Decode(
-                    camTexture.GetPixels32(),
-                    camTexture.width,
-                    camTexture.height
-                );
+                Color32[] pixels = camTexture.GetPixels32();
+                var reader = new QRCodeMultiReader();
+                var hints = new System.Collections.Generic.Dictionary<DecodeHintType, object>();
+                var luminance = new RGBLuminanceSource(pixels, camTexture.width, camTexture.height, RGBLuminanceSource.BitmapFormat.Unknown);
+                var result = reader.decode(new BinaryBitmap(new ZXing.Common.HybridBinarizer(luminance)));
+
                 if (result != null)
                 {
                     Debug.Log("QR scanned: " + result.Text);
