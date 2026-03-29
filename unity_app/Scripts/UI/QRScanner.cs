@@ -9,7 +9,7 @@ namespace ARNav
         public UIController uiController;
 
         private WebCamTexture camTexture;
-        private BarcodeReader reader;
+        private BarcodeReader<RGBLuminanceSource> reader;
         private bool isScanning = true;
         private float scanInterval = 0.5f;
         private float timer = 0f;
@@ -18,7 +18,7 @@ namespace ARNav
         {
             camTexture = new WebCamTexture();
             camTexture.Play();
-            reader = new BarcodeReader();
+            reader = new BarcodeReader<RGBLuminanceSource>();
             Debug.Log("QR Scanner started");
         }
 
