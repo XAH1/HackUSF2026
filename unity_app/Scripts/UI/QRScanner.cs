@@ -1,5 +1,6 @@
 using UnityEngine;
 using ZXing;
+using ZXing.Common;
 
 namespace ARNav
 {
@@ -9,7 +10,7 @@ namespace ARNav
         public UIController uiController;
 
         private WebCamTexture camTexture;
-        private BarcodeReader reader;
+        private IBarcodeReader reader;
         private bool isScanning = true;
         private float scanInterval = 0.5f;
         private float timer = 0f;
@@ -37,12 +38,14 @@ namespace ARNav
 
             try
             {
-                // правильный способ для Unity
-                var result = reader.Decode(
-                    camTexture.GetPixels32(),
-                    camTexture.width,
-                    camTexture.height
-                );
+                Color32[] pixels = camTexture.GetPixels32();
+                int width = camTexture.width;
+                int height = camTexture.height;
+
+                // конвертируем Color32[] в LuminanceSource
+                var source = new Color32LuminanceSource(pixels, width, height);
+                var binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
+                var result = new MultiFormatReader().decode(binaryBitmap);
 
                 if (result != null)
                 {
